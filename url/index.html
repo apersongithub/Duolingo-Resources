@@ -7,6 +7,7 @@
   <style>
     body {
       display: flex;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
       height: 100vh;
@@ -19,13 +20,30 @@
     #lottie {
       width: 80%;
       height: 80%;
+      margin-top: 20px;
     }
-    a {
-      color: #4fc3f7;
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      background: #4fc3f7;
+      color: #111;
+      font-weight: bold;
+      margin-top: 20px;
+    }
+    code {
+      background: #222;
+      padding: 2px 6px;
+      border-radius: 4px;
     }
   </style>
 </head>
 <body>
+  <h2>Lottie Animation Viewer</h2>
+  <div id="info"></div>
+  <button id="playBtn" style="display:none;">▶ Play Animation</button>
   <div id="lottie"></div>
 
   <!-- Lottie player -->
@@ -40,23 +58,26 @@
     }
 
     if (!src) {
-      document.body.innerHTML = `
+      document.getElementById("info").innerHTML = `
         <p>No animation source provided.</p>
         <p>Usage:<br>
-          <code>https://apersongithub.github.io/Duolingo-Resources/url/&lt;encoded-json-url&gt;</code>
-        </p>
-        <p>Example:<br>
-          <a href="https://apersongithub.github.io/Duolingo-Resources/url/https%3A%2F%2Fraw.githubusercontent.com%2Fapersongithub%2FDuolingo-Resources%2Frefs%2Fheads%2Fmain%2FLottie%20Animations%2F2021_12_hero-abae201847cf2c42c16d339d1c72b1c7a7254d66_2.json">
-            Open Lottie Demo
-          </a>
+          <code>https://yourusername.github.io/repo/url/&lt;encoded-json-url&gt;</code>
         </p>`;
     } else {
-      lottie.loadAnimation({
-        container: document.getElementById('lottie'),
-        renderer: 'svg',
-        loop: true,
-        autoplay: true,
-        path: src
+      document.getElementById("info").innerHTML = `
+        <p>Animation source detected:</p>
+        <code>${src}</code>`;
+      document.getElementById("playBtn").style.display = "inline-block";
+
+      document.getElementById("playBtn").addEventListener("click", () => {
+        lottie.loadAnimation({
+          container: document.getElementById('lottie'),
+          renderer: 'svg',
+          loop: true,
+          autoplay: true,
+          path: src
+        });
+        document.getElementById("playBtn").style.display = "none"; // hide after playing
       });
     }
   </script>
