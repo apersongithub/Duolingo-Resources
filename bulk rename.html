@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Batch Rename & Download JSON ZIP</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</head>
+<body>
+<h2>Batch Rename JSON Files & Download ZIP</h2>
+<input type="file" id="fileInput" multiple>
+<button id="downloadZip">Download ZIP</button>
+<ul id="renamedFiles"></ul>
+
+<script>
+const fileInput = document.getElementById('fileInput');
+const downloadBtn = document.getElementById('downloadZip');
+const renamedFilesList = document.getElementById('renamedFiles');
+
+let renamedFiles = [];
+
+fileInput.addEventListener('change', async (event) => {
+    const files = event.target.files;
+    renamedFilesList.innerHTML = '';
+    renamedFiles = [];
+
+    Array.from(files).forEach(file => {
+        const name = file.name;
+        const extension = name.slice(name.lastIndexOf('.'));
+        if (extension !== '.json') return; // Only process JSON
+
+        const heroIndex = name.indexOf('hero');
+        let newName = name;
+        if (heroIndex !== -1) {
+            newName = name.slice(0, heroIndex + 4) + '.json';
+        }
+
+        renamedFiles.push({ file, newName });
+
+        const li = document.createElement('li');
+        li.textContent = `${name} → ${newName}`;
+        renamedFilesList.appendChild(li);
+    });
+});
+
+downloadBtn.addEventListener('click', async () => {
+    if (renamedFiles.length === 0) return alert("No files selected!");
+
+    const zip = new JSZip();
+
+    for (const item of renamedFiles) {
+        const arrayBuffer = await item.file.arrayBuffer();
+        zip.file(item.newName, arrayBuffer);
+    }
+
+    zip.generateAsync({ type: "blob" }).then(blob => {
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = "renamed_files.zip";
+        link.click();
+    });
+});
+</script>
+</body>
+</html>
