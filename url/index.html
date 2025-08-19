@@ -41,7 +41,7 @@
     const params = new URLSearchParams(location.search);
     let src = params.get("src");
 
-    // Rewrite any raw GitHub URL to jsDelivr CORS-friendly URL
+    // Rewrite raw GitHub URLs to jsDelivr (CORS-friendly)
     function githubToJsDelivr(url) {
       try {
         const u = new URL(url);
@@ -73,8 +73,11 @@
         return;
       }
 
-      // Automatically rewrite raw GitHub URLs to jsDelivr
+      // 1️⃣ Automatically rewrite GitHub raw URLs to jsDelivr
       src = githubToJsDelivr(src);
+
+      // 2️⃣ Automatically encode spaces/special characters
+      src = encodeURI(src);
 
       try {
         const res = await fetch(src);
