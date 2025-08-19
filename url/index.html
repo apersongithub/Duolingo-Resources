@@ -11,38 +11,20 @@
       margin: 0; min-height: 100svh; display: grid; place-items: center;
       background: #0f1115; color: #e6e6e6; font-family: system-ui, sans-serif; padding: 24px;
     }
-    .wrap { max-width: 1000px; width: 100%; text-align: center; }
-    #lottie { width: min(90vw, 900px); height: min(70vh, 600px); margin: 18px auto 0; }
-    button {
-      padding: 10px 16px; border: 0; border-radius: 10px; font-weight: 700; cursor: pointer;
-      background: #4fc3f7; color: #0f1115;
-    }
+    #lottie { width: min(90vw, 900px); height: min(70vh, 600px); }
     code { background:#1b1f2a; padding: 3px 6px; border-radius: 6px; word-break: break-all; }
-    .hint { opacity:.8; font-size:.95rem; }
-    .err { color:#ff8a8a; margin-top:12px; }
+    .err { color:#ff8a8a; margin-top:12px; text-align:center; }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <h2>Lottie Animation Viewer</h2>
-    <div id="info" class="hint"></div>
-    <div style="margin-top:12px;">
-      <button id="playBtn" style="display:none;">▶ Play animation</button>
-      <button id="stopBtn" style="display:none;">■ Stop</button>
-    </div>
-    <div id="lottie"></div>
-    <div id="error" class="err"></div>
-  </div>
+  <div id="lottie"></div>
+  <div id="error" class="err"></div>
 
   <script>
-    // 1) Read ?src=<url>
     const params = new URLSearchParams(location.search);
     let src = params.get("src");
 
-    // 2) Helpful auto-fixes:
-    // - If user supplied a raw.githubusercontent.com link, rewrite to jsDelivr (CORS-friendly).
-    //   raw: https://raw.githubusercontent.com/<u>/<r>/<branch>/<path>
-    //   cdn : https://cdn.jsdelivr.net/gh/<u>/<r>@<branch>/<path>
+    // Convert raw.githubusercontent.com URL to jsDelivr
     function rawToJsDelivr(u) {
       try {
         const url = new URL(u);
@@ -54,7 +36,7 @@
       return u;
     }
 
-    // - If the URL points to your own repo file, prefer same-origin Pages URL to avoid CORS entirely.
+    // Convert GitHub repo JSON to Pages URL if possible (same-origin)
     function toSameOriginIfYours(u) {
       try {
         const url = new URL(u);
@@ -68,74 +50,34 @@
       return u;
     }
 
-    let animation = null;
-
-    function showUsage() {
-      const examplePagesJSON =
-        "https://apersongithub.github.io/Duolingo-Resources/Lottie%20Animations/2021_12_hero-abae201847cf2c42c16d339d1c72b1c7a7254d66_2.json";
-
-      document.getElementById("info").innerHTML = `
-        Add <code>?src=&lt;lottie-json-url&gt;</code> to this page.<br>
-        Example:<br>
-        <code>${location.origin}/Duolingo-Resources/url/?src=${examplePagesJSON}</code>
-      `;
-    }
-
-    async function verify(url) {
-      // Quick HEAD/GET check to show a friendly error before Lottie tries to load
-      try {
-        const r = await fetch(url, { method: "GET", mode: "cors" });
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        const ct = r.headers.get("content-type") || "";
-        if (!ct.includes("json")) {
-          // Lottie JSON often has application/json or text/plain; allow both
-          if (!ct.includes("text/plain")) {
-            console.warn("Non-JSON content-type:", ct);
-          }
-        }
-        return true;
-      } catch (e) {
-        document.getElementById("error").textContent =
-          `Can't fetch animation (${e.message}). If this is a raw.githubusercontent.com URL, use the Pages or jsDelivr link.`;
-        return false;
+    async function init() {
+      if (!src) {
+        document.getElementById("error").textContent = 
+          "Add ?src=<lottie-json-url> to the URL.";
+        return;
       }
-    }
 
-    function play(url) {
-      if (animation) { animation.destroy(); animation = null; }
-      animation = lottie.loadAnimation({
-        container: document.getElementById("lottie"),
-        renderer: "svg",
-        loop: true,
-        autoplay: true,
-        path: url
-      });
-      document.getElementById("playBtn").style.display = "none";
-      document.getElementById("stopBtn").style.display = "inline-block";
-    }
-
-    function stop() {
-      if (animation) { animation.destroy(); animation = null; }
-      document.getElementById("stopBtn").style.display = "none";
-      document.getElementById("playBtn").style.display = "inline-block";
-    }
-
-    (async function init() {
-      if (!src) { showUsage(); return; }
-
-      // try best URL for GitHub-hosted files
+      // Prefer Pages URL, otherwise rewrite raw GitHub to jsDelivr
       src = toSameOriginIfYours(src);
       src = rawToJsDelivr(src);
 
-      document.getElementById("info").innerHTML =
-        `Animation source detected:<br><code>${src}</code>`;
-      const ok = await verify(src);
-      if (ok) {
-        document.getElementById("playBtn").style.display = "inline-block";
-        document.getElementById("playBtn").onclick = () => play(src);
-        document.getElementById("stopBtn").onclick = stop;
+      try {
+        const r = await fetch(src);
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        lottie.loadAnimation({
+          container: document.getElementById("lottie"),
+          renderer: "svg",
+          loop: true,
+          autoplay: true,
+          path: src
+        });
+      } catch(e) {
+        document.getElementById("error").textContent = 
+          "Failed to load animation: " + e.message;
       }
-    })();
+    }
+
+    init();
   </script>
 </body>
 </html>
