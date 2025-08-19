@@ -12,10 +12,16 @@
       height: 100vh;
       margin: 0;
       background: #111;
+      color: white;
+      font-family: sans-serif;
+      text-align: center;
     }
     #lottie {
       width: 80%;
       height: 80%;
+    }
+    a {
+      color: #4fc3f7;
     }
   </style>
 </head>
@@ -25,24 +31,32 @@
   <!-- Lottie player -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
   <script>
-    // Grab everything after /url/
+    // Get everything after "/url/"
     const pathPart = window.location.pathname.split("/url/")[1];
     let src;
 
     if (pathPart) {
-      // decode URL-safe string
       src = decodeURIComponent(pathPart);
     }
 
     if (!src) {
-      document.body.innerHTML = "<p style='color:white'>No animation source provided.<br>Usage: https://yourusername.github.io/url/https%3A%2F%2Fexample.com%2Ffile.json</p>";
+      document.body.innerHTML = `
+        <p>No animation source provided.</p>
+        <p>Usage:<br>
+          <code>https://apersongithub.github.io/Duolingo-Resources/url/&lt;encoded-json-url&gt;</code>
+        </p>
+        <p>Example:<br>
+          <a href="https://apersongithub.github.io/Duolingo-Resources/url/https%3A%2F%2Fraw.githubusercontent.com%2Fapersongithub%2FDuolingo-Resources%2Frefs%2Fheads%2Fmain%2FLottie%20Animations%2F2021_12_hero-abae201847cf2c42c16d339d1c72b1c7a7254d66_2.json">
+            Open Lottie Demo
+          </a>
+        </p>`;
     } else {
       lottie.loadAnimation({
         container: document.getElementById('lottie'),
         renderer: 'svg',
         loop: true,
         autoplay: true,
-        path: src // external JSON URL
+        path: src
       });
     }
   </script>
