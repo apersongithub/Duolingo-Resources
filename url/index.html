@@ -1,19 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Lottie Viewer</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Universal Lottie Viewer</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
   <style>
-    :root { color-scheme: dark; }
     body {
-      margin: 0; min-height: 100svh; display: grid; place-items: center;
-      background: #0f1115; color: #e6e6e6; font-family: system-ui, sans-serif; padding: 24px;
+      margin: 0; display: grid; place-items: center; min-height: 100vh;
+      background: #111; color: #fff; font-family: sans-serif; padding: 20px;
     }
     #lottie { width: min(90vw, 900px); height: min(70vh, 600px); }
-    .err { color:#ff8a8a; margin-top:12px; text-align:center; }
-    code { background:#1b1f2a; padding: 3px 6px; border-radius: 6px; word-break: break-all; }
+    .err { color:#f88; text-align:center; margin-top:12px; }
+    code { background:#222; padding:3px 6px; border-radius:6px; word-break: break-all; }
   </style>
 </head>
 <body>
@@ -22,52 +21,31 @@
 
   <script>
     const params = new URLSearchParams(location.search);
-    let src = params.get("src");
+    const src = params.get("src");
 
-    // Convert any raw GitHub URL (even with refs/heads/main) to jsDelivr
-    function githubToJsDelivr(u) {
-      try {
-        const url = new URL(u);
-        if (url.hostname === "raw.githubusercontent.com") {
-          const parts = url.pathname.split("/").filter(Boolean); // [user, repo, branch/ref, path...]
-          if (parts.length >= 4) {
-            const user = parts[0];
-            const repo = parts[1];
-            const branchOrRef = parts[2] === "refs" && parts[3] === "heads" ? parts[4] : parts[2];
-            const pathParts = parts.slice(parts[2] === "refs" ? 5 : 3);
-            return `https://cdn.jsdelivr.net/gh/${user}/${repo}@${branchOrRef}/${pathParts.join("/")}`;
-          }
-        }
-      } catch {}
-      return u;
-    }
-
-    async function init() {
-      if (!src) {
-        document.getElementById("error").textContent = 
-          "Add ?src=<lottie-json-url> to the URL.";
-        return;
-      }
-
-      src = githubToJsDelivr(src);
-
-      try {
-        const res = await fetch(src);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        lottie.loadAnimation({
-          container: document.getElementById("lottie"),
-          renderer: "svg",
-          loop: true,
-          autoplay: true,
-          path: src
+    if (!src) {
+      document.getElementById("error").textContent =
+        "Usage: ?src=<json-url>";
+    } else {
+      fetch(src)
+        .then(res => {
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          return res.json(); // attempt to parse JSON
+        })
+        .then(json => {
+          lottie.loadAnimation({
+            container: document.getElementById("lottie"),
+            renderer: "svg",
+            loop: true,
+            autoplay: true,
+            animationData: json
+          });
+        })
+        .catch(err => {
+          document.getElementById("error").textContent =
+            "Failed to load/render animation:\n" + err.message + "\nURL: " + src;
         });
-      } catch (e) {
-        document.getElementById("error").textContent =
-          "Failed to load animation: " + e.message + "\nURL: " + src;
-      }
     }
-
-    init();
   </script>
 </body>
 </html>
