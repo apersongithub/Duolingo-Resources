@@ -12,8 +12,8 @@
       background: #0f1115; color: #e6e6e6; font-family: system-ui, sans-serif; padding: 24px;
     }
     #lottie { width: min(90vw, 900px); height: min(70vh, 600px); }
-    code { background:#1b1f2a; padding: 3px 6px; border-radius: 6px; word-break: break-all; }
     .err { color:#ff8a8a; margin-top:12px; text-align:center; }
+    code { background:#1b1f2a; padding: 3px 6px; border-radius: 6px; word-break: break-all; }
   </style>
 </head>
 <body>
@@ -24,27 +24,19 @@
     const params = new URLSearchParams(location.search);
     let src = params.get("src");
 
-    // Convert raw.githubusercontent.com URL to jsDelivr
-    function rawToJsDelivr(u) {
+    // Convert any raw GitHub URL (even with refs/heads/main) to jsDelivr
+    function githubToJsDelivr(u) {
       try {
         const url = new URL(u);
         if (url.hostname === "raw.githubusercontent.com") {
-          const [user, repo, branch, ...rest] = url.pathname.split("/").filter(Boolean);
-          return `https://cdn.jsdelivr.net/gh/${user}/${repo}@${branch}/${rest.join("/")}`;
-        }
-      } catch {}
-      return u;
-    }
-
-    // Convert GitHub repo JSON to Pages URL if possible (same-origin)
-    function toSameOriginIfYours(u) {
-      try {
-        const url = new URL(u);
-        const isRawYourRepo = (url.hostname === "raw.githubusercontent.com"
-          && url.pathname.startsWith("/apersongithub/Duolingo-Resources/"));
-        if (isRawYourRepo) {
-          const [, , , ...rest] = url.pathname.split("/"); // skip user/repo/branch
-          return `https://apersongithub.github.io/Duolingo-Resources/${rest.join("/")}`;
+          const parts = url.pathname.split("/").filter(Boolean); // [user, repo, branch/ref, path...]
+          if (parts.length >= 4) {
+            const user = parts[0];
+            const repo = parts[1];
+            const branchOrRef = parts[2] === "refs" && parts[3] === "heads" ? parts[4] : parts[2];
+            const pathParts = parts.slice(parts[2] === "refs" ? 5 : 3);
+            return `https://cdn.jsdelivr.net/gh/${user}/${repo}@${branchOrRef}/${pathParts.join("/")}`;
+          }
         }
       } catch {}
       return u;
@@ -57,13 +49,11 @@
         return;
       }
 
-      // Prefer Pages URL, otherwise rewrite raw GitHub to jsDelivr
-      src = toSameOriginIfYours(src);
-      src = rawToJsDelivr(src);
+      src = githubToJsDelivr(src);
 
       try {
-        const r = await fetch(src);
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const res = await fetch(src);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         lottie.loadAnimation({
           container: document.getElementById("lottie"),
           renderer: "svg",
@@ -71,9 +61,9 @@
           autoplay: true,
           path: src
         });
-      } catch(e) {
-        document.getElementById("error").textContent = 
-          "Failed to load animation: " + e.message;
+      } catch (e) {
+        document.getElementById("error").textContent =
+          "Failed to load animation: " + e.message + "\nURL: " + src;
       }
     }
 
